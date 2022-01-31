@@ -231,8 +231,6 @@ exit(int status)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
-
-  curproc->exitStatus = status;
   
   if(curproc == initproc)
     panic("init exiting");
@@ -266,6 +264,7 @@ exit(int status)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  curproc->exitStatus = status;
   sched();
   panic("zombie exit");
 }
