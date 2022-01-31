@@ -264,7 +264,7 @@ exit(int status)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
-  curproc->exitStatus = status;
+  curproc -> exitStatus = status;
   sched();
   panic("zombie exit");
 }
@@ -297,11 +297,9 @@ wait(int *status)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-        release(&ptable.lock);
-        if (p->exitStatus != 0)
+        if(status != 0)
           *status = p->exitStatus;
-        else
-          *status = -1;
+        release(&ptable.lock);
         return pid;
       }
     }
@@ -318,10 +316,10 @@ wait(int *status)
 }
 
 
-int waitpid(int pidExist, int *status, int options)
+int waitpid(int pid, int *status, int options)
 {
   struct proc *p;
-  int havekids, pid;
+  int havekids;
   struct proc *curproc = myproc();
   
   acquire(&ptable.lock);
@@ -329,8 +327,8 @@ int waitpid(int pidExist, int *status, int options)
     // Scan through table looking for exited children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->pid != pidExist)
-        continue;
+      if(p->pid == pid){
+        //continue;
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
@@ -343,15 +341,13 @@ int waitpid(int pidExist, int *status, int options)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-        release(&ptable.lock);
-        if (p->exitStatus != 0)
+        if(status != 0)
           *status = p->exitStatus;
-        else
-          *status = -1;
+        release(&ptable.lock);
         return pid;
       }
     }
-
+  }
     // No point waiting if we don't have any children.
     if(!havekids || curproc->killed){
       release(&ptable.lock);

@@ -17,7 +17,7 @@ int
 sys_exit(int status)
 {
   //int status;
-  if(argint(0, &status) < 0) {
+  if(argint(0, &status) < 0){
     return -1;
   }
   exit(status);
@@ -27,15 +27,18 @@ sys_exit(int status)
 int
 sys_wait(int *status)
 {
-  if (argptr(0, (void* )&status, 4) < 0) {
+  if (argptr(0, (void* )&status, 4) < 0) 
     return -1;
-  }
+
   return wait(status);
 }
 
 int
 sys_waitpid(int pid, int* status, int options)
 {
+  if((argint(0,&pid) < 0 ) || (argptr(1,(char**)&status, 4) < 0)){ 
+    return -1;
+  }
   return waitpid(pid, status, options);
 }
 
