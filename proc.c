@@ -298,7 +298,10 @@ wait(int *status)
         p->killed = 0;
         p->state = UNUSED;
         release(&ptable.lock);
-        *status = p->exitStatus;
+        if (p->exitStatus != 0)
+          *status = p->exitStatus;
+        else
+          *status = -1;
         return pid;
       }
     }
@@ -341,8 +344,10 @@ int waitpid(int pidExist, int *status, int options)
         p->killed = 0;
         p->state = UNUSED;
         release(&ptable.lock);
-        if(status != 0)
+        if (p->exitStatus != 0)
           *status = p->exitStatus;
+        else
+          *status = -1;
         return pid;
       }
     }
