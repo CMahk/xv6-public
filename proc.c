@@ -8,6 +8,7 @@
 #include "spinlock.h"
 
 
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -112,6 +113,9 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  p->priority = 10;
+  p->start_time = ticks; 
 
   return p;
 }
@@ -231,6 +235,7 @@ exit(int status)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
+  //curproc -> exitStatus = status;
   
   if(curproc == initproc)
     panic("init exiting");
@@ -247,7 +252,7 @@ exit(int status)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
-
+  cprintf("\nProcess %d's turnaround time was %d\n", curproc->pid, ticks - curproc->start_time);// bonus 3 track schedueling performance
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
@@ -267,6 +272,7 @@ exit(int status)
   curproc -> exitStatus = status;
   sched();
   panic("zombie exit");
+  
 }
 
 // Wait for a child process to exit and return its pid.
@@ -358,6 +364,17 @@ int waitpid(int pid, int *status, int options)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 }
+
+int setPrior(int priority){
+  struct proc *p= myproc();
+  p->priority = priority;
+  return 0;
+}
+
+int getPrior(){
+  struct proc *curproc = myproc();
+  return curproc->priority;
+}
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -378,17 +395,32 @@ scheduler(void)
     sti();
 
     // Loop over process table looking for process to run.
+    int lowest_prio = 30;
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      if (p->state == RUNNABLE && p->priority < lowest_prio) {
+          lowest_prio = p->priority;
+      }
+    }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE){
         continue;
+      }
+      if(p->priority != lowest_prio){ //aging
+        if (p->priority > 0) {
+          p->priority--;
+        }
+        continue;
+      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->priority++;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -579,3 +611,5 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+

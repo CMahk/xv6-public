@@ -112,3 +112,18 @@ sys_add(void){
 	int b = 2021;
 	return a + b;
 }
+
+int
+sys_setPrior(void){
+  int prior_lvl;
+  if(argint(0, &prior_lvl) < 0){
+    return -1;
+  }
+  return setPrior(prior_lvl);
+  //return prior_lvl;
+}
+
+int 
+sys_getPrior(void){
+  return getPrior();
+}
