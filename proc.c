@@ -252,7 +252,8 @@ exit(int status)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
-  cprintf("\nProcess %d's turnaround time was %d\n", curproc->pid, ticks - curproc->start_time);// bonus 3 track schedueling performance
+  
+  cprintf("\nProcess %d's turnaround time was %d and ending priority was %d\n", curproc->pid, ticks - curproc->start_time, curproc->priority);// bonus 3 track schedueling performance
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
