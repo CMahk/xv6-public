@@ -51,7 +51,9 @@ struct proc {
   char name[16];               // Process name (debugging)
   int exitStatus;              // exit status
   int priority;                // prio value
-  int start_time;
+  int start_time;              // start_time
+  int end_time;                // end time
+  int wait_time;               // wait time
   
 };
 

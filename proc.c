@@ -114,8 +114,9 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
-  p->priority = 10;
-  p->start_time = ticks; 
+  p->priority = 0;
+  p->start_time = ticks;
+  p->wait_time = 0;
 
   return p;
 }
@@ -154,6 +155,7 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  p->start_time = ticks;
 
   release(&ptable.lock);
 }
@@ -216,7 +218,7 @@ fork(void)
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
-
+   
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
@@ -254,6 +256,7 @@ exit(int status)
   curproc->cwd = 0;
   
   cprintf("\nProcess %d's turnaround time was %d and ending priority was %d\n", curproc->pid, ticks - curproc->start_time, curproc->priority);// bonus 3 track schedueling performance
+  cprintf("\n Process %d Wait Time: %d\n", curproc->pid, curproc->wait_time);
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
@@ -388,6 +391,7 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *p1;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -425,10 +429,16 @@ scheduler(void)
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
+      
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
+    }
+    for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+      if(p1 !=p){
+        p1->wait_time++;
+      }
     }
     release(&ptable.lock);
 
@@ -612,5 +622,3 @@ procdump(void)
     cprintf("\n");
   }
 }
-
-
